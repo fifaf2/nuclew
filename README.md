@@ -4,9 +4,7 @@
 
 **Интеллектуальная среда для совместной работы с документами и задачами**
 
-[![Markdown](https://img.shields.io/badge/Format-Markdown-333?style=flat-square&logo=markdown)](#)
-[![Sync](https://img.shields.io/badge/Sync-Deferred%20Diffs-blue?style=flat-square)](#)
-[![Locking](https://img.shields.io/badge/Editing-Pessimistic%20Lock-success?style=flat-square)](#)
+
 
 <p align="center">
   Коллективная база знаний без конфликтов одновременного редактирования, <br> 
