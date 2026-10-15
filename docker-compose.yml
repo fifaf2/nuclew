@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-knowledge_base_db}
+      MYSQL_USER: ${MYSQL_USER:-nuclew}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      TZ: UTC
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./Документы/DB_nuclew.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-knowledge_base_db}
+      MYSQL_USER: ${MYSQL_USER:-nuclew}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+      SUPPORT_USER_IDS: ${SUPPORT_USER_IDS:-}
+      TZ: UTC
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
