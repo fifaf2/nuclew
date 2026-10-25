@@ -1,8 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="client"
+        android:label="Nuclew"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
+        <!-- Локальный API по http. На эмуляторе хост — 10.0.2.2, без cleartext запрос режется. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

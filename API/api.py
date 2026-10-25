@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel, ConfigDict, Field
@@ -42,6 +43,13 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 bearer = HTTPBearer(auto_error=False)
 
 app = FastAPI(title="Nuclew API", version="1.0.0")
+# Браузерный клиент (Edge) ходит с другого порта. Без этого заголовок режет запрос.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class InputModel(BaseModel):
