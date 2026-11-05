@@ -5,7 +5,7 @@ from datetime import date, datetime, time
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.database import Base, engine
 
 # Справочники:
 
@@ -188,9 +188,4 @@ class SupportRequest(Base):
 
 class SystemLog(Base):
     __tablename__ = "system_logs"
-
-    log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.user_id"), nullable=True)
-    action: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    __table_args__ = {"autoload_with": engine}
