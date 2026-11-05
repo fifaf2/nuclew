@@ -30,7 +30,6 @@ from app.schemas import CommentInput, RemarkInput, TaskInput, TaskUpdateInput
 
 router = APIRouter(prefix="/api/v1", tags=["tasks"])
 
-
 def serialize_task(task: Task) -> dict:
     return {
         "task_id": task.task_id,
@@ -44,7 +43,6 @@ def serialize_task(task: Task) -> dict:
         "last_modified_at": task.last_modified_at,
         "is_archived": task.is_archived,
     }
-
 
 @router.get("/teams/{team_id}/tasks")
 def list_tasks(
@@ -84,7 +82,6 @@ def list_tasks(
         for t in tasks
     ]
 
-
 @router.post("/teams/{team_id}/tasks", status_code=status.HTTP_201_CREATED)
 def create_task(team_id: int, data: TaskInput, db: Db, user: CurrentUser):
     member = membership(db, team_id, user.user_id)
@@ -102,12 +99,10 @@ def create_task(team_id: int, data: TaskInput, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-
 @router.get("/tasks/{task_id}")
 def get_task(task_id: int, db: Db, user: CurrentUser):
     task, _ = task_access(db, task_id, user.user_id)
     return serialize_task(task)
-
 
 @router.post("/tasks/{task_id}/claim")
 def claim_task(task_id: int, db: Db, user: CurrentUser):
@@ -128,7 +123,6 @@ def claim_task(task_id: int, db: Db, user: CurrentUser):
     db.commit()
     db.refresh(task)
     return serialize_task(task)
-
 
 @router.patch("/tasks/{task_id}")
 def update_task(task_id: int, data: TaskUpdateInput, db: Db, user: CurrentUser):
@@ -173,7 +167,6 @@ def update_task(task_id: int, data: TaskUpdateInput, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-
 @router.post("/tasks/{task_id}/complete")
 def complete_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
@@ -192,7 +185,6 @@ def complete_task(task_id: int, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-
 @router.post("/tasks/{task_id}/unlock")
 def owner_unlock_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
@@ -202,7 +194,6 @@ def owner_unlock_task(task_id: int, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-
 @router.post("/tasks/{task_id}/archive")
 def archive_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
@@ -210,7 +201,6 @@ def archive_task(task_id: int, db: Db, user: CurrentUser):
     task.is_archived = True
     db.commit()
     return {"task_id": task_id, "is_archived": True}
-
 
 @router.get("/tasks/{task_id}/changes")
 def list_changes(task_id: int, db: Db, user: CurrentUser):
@@ -235,7 +225,6 @@ def list_changes(task_id: int, db: Db, user: CurrentUser):
         for c in changes
     ]
 
-
 @router.get("/tasks/{task_id}/comments")
 def list_comments(task_id: int, db: Db, user: CurrentUser):
     task_access(db, task_id, user.user_id)
@@ -257,7 +246,6 @@ def list_comments(task_id: int, db: Db, user: CurrentUser):
         for c in comments
     ]
 
-
 @router.post("/tasks/{task_id}/comments", status_code=status.HTTP_201_CREATED)
 def add_comment(task_id: int, data: CommentInput, db: Db, user: CurrentUser):
     _, member = task_access(db, task_id, user.user_id)
@@ -272,7 +260,6 @@ def add_comment(task_id: int, data: CommentInput, db: Db, user: CurrentUser):
     db.commit()
     db.refresh(comment)
     return {"comment_id": comment.comment_id, "task_id": task_id, "text": comment.text}
-
 
 @router.get("/tasks/{task_id}/remarks")
 def list_remarks(task_id: int, db: Db, user: CurrentUser):
@@ -297,7 +284,6 @@ def list_remarks(task_id: int, db: Db, user: CurrentUser):
         }
         for r in remarks
     ]
-
 
 @router.post("/tasks/{task_id}/remarks", status_code=status.HTTP_201_CREATED)
 def add_remark(task_id: int, data: RemarkInput, db: Db, user: CurrentUser):
@@ -338,7 +324,6 @@ def add_remark(task_id: int, data: RemarkInput, db: Db, user: CurrentUser):
     db.commit()
     db.refresh(remark)
     return {"remark_id": remark.remark_id, "task_id": task_id, "status": "открыто"}
-
 
 @router.patch("/remarks/{remark_id}")
 def resolve_remark(remark_id: int, db: Db, user: CurrentUser):

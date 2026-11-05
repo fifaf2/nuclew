@@ -12,7 +12,6 @@ from app.security import password_hash
 
 router = APIRouter(prefix="/api/v1", tags=["users"])
 
-
 def serialize_user(user: User) -> dict:
     return {
         "user_id": user.user_id,
@@ -25,11 +24,9 @@ def serialize_user(user: User) -> dict:
         "activity_status": user.activity_status.name,
     }
 
-
 @router.get("/users/me")
 def get_profile(user: CurrentUser):
     return serialize_user(user)
-
 
 @router.patch("/users/me")
 def update_profile(data: ProfileInput, db: Db, user: CurrentUser):
@@ -53,7 +50,6 @@ def update_profile(data: ProfileInput, db: Db, user: CurrentUser):
 
     return serialize_user(user)
 
-
 @router.patch("/users/me/presence")
 def update_presence(data: PresenceInput, db: Db, user: CurrentUser):
     presence = get_lookup_by_name(db, PresenceStatus, data.status)
@@ -61,7 +57,6 @@ def update_presence(data: PresenceInput, db: Db, user: CurrentUser):
     db.commit()
     db.refresh(user)
     return serialize_user(user)
-
 
 @router.get("/users/me/notifications")
 def list_notifications(
@@ -90,7 +85,6 @@ def list_notifications(
         }
         for n in notifications
     ]
-
 
 @router.patch("/notifications/{notification_id}")
 def mark_notification(notification_id: int, data: NotificationInput, db: Db, user: CurrentUser):

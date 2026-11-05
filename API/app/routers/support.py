@@ -12,7 +12,6 @@ from app.schemas import SupportProcessInput, SupportRequestInput
 
 router = APIRouter(prefix="/api/v1/support", tags=["support"])
 
-
 @router.post("/requests", status_code=status.HTTP_201_CREATED)
 def create_support_request(data: SupportRequestInput, db: Db, user: CurrentUser):
     req = SupportRequest(
@@ -24,7 +23,6 @@ def create_support_request(data: SupportRequestInput, db: Db, user: CurrentUser)
     db.commit()
     db.refresh(req)
     return {"request_id": req.request_id, "subject": req.subject}
-
 
 @router.get("/requests")
 def list_support_requests(db: Db, user: CurrentUser, limit: int = Query(default=50, ge=1, le=100)):
@@ -49,7 +47,6 @@ def list_support_requests(db: Db, user: CurrentUser, limit: int = Query(default=
         }
         for r in requests
     ]
-
 
 @router.patch("/requests/{request_id}")
 def process_support_request(request_id: int, data: SupportProcessInput, db: Db, user: CurrentUser):
