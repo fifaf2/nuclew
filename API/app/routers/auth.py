@@ -14,7 +14,6 @@ from app.security import create_access_token, password_hash, password_matches
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
-
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(data: RegisterInput, db: Db):
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", data.email):
@@ -39,7 +38,6 @@ def register(data: RegisterInput, db: Db):
         raise HTTPException(status_code=409, detail="Email или псевдоним уже используются")
 
     return {"access_token": create_access_token(user.user_id), "token_type": "bearer"}
-
 
 @router.post("/login")
 def login(data: LoginInput, db: Db):

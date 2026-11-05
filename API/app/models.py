@@ -7,8 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
-
-# --- Справочники (Lookup tables) ---
+# Справочники:
 
 class PresenceStatus(Base):
     __tablename__ = "presence_statuses"
@@ -16,13 +15,11 @@ class PresenceStatus(Base):
     presence_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
-
 class UserActivityStatus(Base):
     __tablename__ = "user_activity_statuses"
 
     activity_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-
 
 class TeamRole(Base):
     __tablename__ = "team_roles"
@@ -30,13 +27,11 @@ class TeamRole(Base):
     team_role_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
-
 class TaskStatus(Base):
     __tablename__ = "task_statuses"
 
     task_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-
 
 class InvitationStatus(Base):
     __tablename__ = "invitation_statuses"
@@ -44,13 +39,11 @@ class InvitationStatus(Base):
     invitation_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
-
 class RemarkStatus(Base):
     __tablename__ = "remark_statuses"
 
     remark_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-
 
 class NotificationReadStatus(Base):
     __tablename__ = "notification_read_statuses"
@@ -58,8 +51,7 @@ class NotificationReadStatus(Base):
     read_status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
-
-# --- Основные таблицы ---
+# Основные таблицы:
 
 class User(Base):
     __tablename__ = "users"
@@ -76,7 +68,6 @@ class User(Base):
     presence_status: Mapped[PresenceStatus] = relationship("PresenceStatus", lazy="joined")
     activity_status: Mapped[UserActivityStatus] = relationship("UserActivityStatus", lazy="joined")
 
-
 class Team(Base):
     __tablename__ = "teams"
 
@@ -88,7 +79,6 @@ class Team(Base):
 
     creator: Mapped[User] = relationship("User")
     members: Mapped[list[TeamMember]] = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
-
 
 class TeamMember(Base):
     __tablename__ = "team_members"
@@ -103,7 +93,6 @@ class TeamMember(Base):
     user: Mapped[User] = relationship("User", lazy="joined")
     role: Mapped[TeamRole] = relationship("TeamRole", lazy="joined")
 
-
 class Invitation(Base):
     __tablename__ = "invitations"
 
@@ -115,7 +104,6 @@ class Invitation(Base):
     invitation_status_id: Mapped[int] = mapped_column(ForeignKey("invitation_statuses.invitation_status_id"), nullable=False)
 
     status: Mapped[InvitationStatus] = relationship("InvitationStatus", lazy="joined")
-
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -133,7 +121,6 @@ class Task(Base):
     status: Mapped[TaskStatus] = relationship("TaskStatus", lazy="joined")
     assignee: Mapped[User | None] = relationship("User", lazy="joined")
 
-
 class TaskChange(Base):
     __tablename__ = "task_changes"
 
@@ -148,7 +135,6 @@ class TaskChange(Base):
     author: Mapped[User] = relationship("User", lazy="joined")
     author_role: Mapped[TeamRole] = relationship("TeamRole", lazy="joined")
 
-
 class Comment(Base):
     __tablename__ = "comments"
 
@@ -159,7 +145,6 @@ class Comment(Base):
     created_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     author: Mapped[User] = relationship("User", lazy="joined")
-
 
 class Remark(Base):
     __tablename__ = "remarks"
@@ -176,7 +161,6 @@ class Remark(Base):
     author: Mapped[User] = relationship("User", lazy="joined")
     status: Mapped[RemarkStatus] = relationship("RemarkStatus", lazy="joined")
 
-
 class Notification(Base):
     __tablename__ = "notifications"
 
@@ -188,7 +172,6 @@ class Notification(Base):
     read_status_id: Mapped[int] = mapped_column(ForeignKey("notification_read_statuses.read_status_id"), nullable=False)
 
     read_status: Mapped[NotificationReadStatus] = relationship("NotificationReadStatus", lazy="joined")
-
 
 class SupportRequest(Base):
     __tablename__ = "support_requests"
@@ -202,7 +185,6 @@ class SupportRequest(Base):
     processed_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.user_id"), nullable=True)
 
     user: Mapped[User] = relationship("User", foreign_keys=[user_id], lazy="joined")
-
 
 class SystemLog(Base):
     __tablename__ = "system_logs"

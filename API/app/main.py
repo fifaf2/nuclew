@@ -16,12 +16,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health", tags=["health"])
 def health(db: Db):
     db.scalar(select(1))
     return {"status": "ok", "database": "connected"}
-
 
 app.include_router(auth.router)
 app.include_router(users.router)

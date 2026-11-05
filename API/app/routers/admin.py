@@ -13,7 +13,6 @@ from app.security import password_hash
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
-
 @router.get("/users")
 def admin_users(db: Db, user: CurrentUser, q: str | None = None, limit: int = Query(default=50, ge=1, le=100)):
     support_only(user)
@@ -37,7 +36,6 @@ def admin_users(db: Db, user: CurrentUser, q: str | None = None, limit: int = Qu
         for u in users
     ]
 
-
 @router.patch("/users/{target_user_id}/activity")
 def set_user_activity(target_user_id: int, data: ActivityInput, db: Db, user: CurrentUser):
     support_only(user)
@@ -52,7 +50,6 @@ def set_user_activity(target_user_id: int, data: ActivityInput, db: Db, user: Cu
 
     return {"user_id": target_user_id, "activity_status": activity_name}
 
-
 @router.post("/users/{target_user_id}/password-reset")
 def reset_user_password(target_user_id: int, db: Db, user: CurrentUser):
     support_only(user)
@@ -65,7 +62,6 @@ def reset_user_password(target_user_id: int, db: Db, user: CurrentUser):
     db.commit()
 
     return {"user_id": target_user_id, "temporary_password": temporary_password}
-
 
 @router.get("/teams")
 def admin_teams(db: Db, user: CurrentUser, limit: int = Query(default=50, ge=1, le=100)):
@@ -85,7 +81,6 @@ def admin_teams(db: Db, user: CurrentUser, limit: int = Query(default=50, ge=1, 
         }
         for t in teams
     ]
-
 
 @router.get("/tasks/{task_id}/changes")
 def admin_task_changes(task_id: int, db: Db, user: CurrentUser):
@@ -115,7 +110,6 @@ def admin_task_changes(task_id: int, db: Db, user: CurrentUser):
         for c in changes
     ]
 
-
 @router.post("/tasks/{task_id}/unlock")
 def support_unlock_task(task_id: int, db: Db, user: CurrentUser):
     support_only(user)
@@ -126,7 +120,6 @@ def support_unlock_task(task_id: int, db: Db, user: CurrentUser):
     unlock_task_orm(db, task)
     db.commit()
     return {"task_id": task_id, "status": "свободна"}
-
 
 @router.get("/system-logs")
 def system_logs(db: Db, user: CurrentUser, limit: int = Query(default=100, ge=1, le=500)):

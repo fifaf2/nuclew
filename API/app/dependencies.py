@@ -22,13 +22,11 @@ from app.security import bearer
 
 ModelType = TypeVar("ModelType", bound=Base)
 
-
 def get_lookup_by_name(db: Session, model: type[ModelType], name: str) -> ModelType:
     obj = db.scalar(select(model).filter_by(name=name))
     if obj is None:
         raise HTTPException(status_code=500, detail=f"В БД отсутствует справочник: {name}")
     return obj
-
 
 def current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
@@ -49,9 +47,7 @@ def current_user(
         raise HTTPException(status_code=403, detail="Учётная запись заблокирована")
     return user
 
-
 CurrentUser = Annotated[User, Depends(current_user)]
-
 
 def membership(db: Session, team_id: int, user_id: int) -> TeamMember:
     member = db.scalar(
@@ -61,7 +57,6 @@ def membership(db: Session, team_id: int, user_id: int) -> TeamMember:
         raise HTTPException(status_code=403, detail="Нет доступа к команде")
     return member
 
-
 def task_access(db: Session, task_id: int, user_id: int) -> tuple[Task, TeamMember]:
     task = db.scalar(
         select(Task).filter_by(task_id=task_id, is_archived=False)
@@ -70,16 +65,13 @@ def task_access(db: Session, task_id: int, user_id: int) -> tuple[Task, TeamMemb
         raise HTTPException(status_code=404, detail="Задача не найдена")
     return task, membership(db, task.team_id, user_id)
 
-
 def require_role(member: TeamMember, *roles: str) -> None:
     if member.role.name not in roles:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
 
-
 def support_only(user: User) -> None:
     if user.user_id not in SUPPORT_USER_IDS:
         raise HTTPException(status_code=403, detail="Доступно только техподдержке")
-
 
 def notify(db: Session, user_id: int, task_id: int | None, message: str) -> None:
     unread_status = get_lookup_by_name(db, NotificationReadStatus, "не прочитано")
@@ -91,7 +83,6 @@ def notify(db: Session, user_id: int, task_id: int | None, message: str) -> None
     )
     db.add(notification)
 
-
 def notify_team(db: Session, team_id: int, task_id: int, message: str, exclude_user_id: int) -> None:
     members = db.scalars(
         select(TeamMember).where(
@@ -101,7 +92,6 @@ def notify_team(db: Session, team_id: int, task_id: int, message: str, exclude_u
     ).all()
     for member in members:
         notify(db, member.user_id, task_id, message)
-
 
 def unlock_task_orm(db: Session, task: Task) -> None:
     free_status = get_lookup_by_name(db, TaskStatus, "свободна")
