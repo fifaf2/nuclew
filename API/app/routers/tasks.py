@@ -28,7 +28,7 @@ from app.models import (
 )
 from app.schemas import CommentInput, RemarkInput, TaskInput, TaskUpdateInput
 
-router = APIRouter(prefix="/api/v1", tags=["tasks"])
+router = APIRouter(prefix="/api/v1")
 
 def serialize_task(task: Task) -> dict:
     return {
@@ -44,7 +44,7 @@ def serialize_task(task: Task) -> dict:
         "is_archived": task.is_archived,
     }
 
-@router.get("/teams/{team_id}/tasks")
+@router.get("/teams/{team_id}/tasks", tags=["Tasks"], summary="Список задач команды с фильтрацией")
 def list_tasks(
     team_id: int,
     db: Db,
@@ -82,7 +82,7 @@ def list_tasks(
         for t in tasks
     ]
 
-@router.post("/teams/{team_id}/tasks", status_code=status.HTTP_201_CREATED)
+@router.post("/teams/{team_id}/tasks", tags=["Tasks"], status_code=status.HTTP_201_CREATED, summary="Создать задачу в команде")
 def create_task(team_id: int, data: TaskInput, db: Db, user: CurrentUser):
     member = membership(db, team_id, user.user_id)
     require_role(member, "владелец команды")
@@ -99,12 +99,12 @@ def create_task(team_id: int, data: TaskInput, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-@router.get("/tasks/{task_id}")
+@router.get("/tasks/{task_id}", tags=["Tasks"], summary="Получить задачу по ID")
 def get_task(task_id: int, db: Db, user: CurrentUser):
     task, _ = task_access(db, task_id, user.user_id)
     return serialize_task(task)
 
-@router.post("/tasks/{task_id}/claim")
+@router.post("/tasks/{task_id}/claim", tags=["Tasks"], summary="Взять задачу в работу")
 def claim_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды", "участник")
@@ -124,7 +124,7 @@ def claim_task(task_id: int, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-@router.patch("/tasks/{task_id}")
+@router.patch("/tasks/{task_id}", tags=["Tasks"], summary="Редактировать задачу (с сохранением diff-истории)")
 def update_task(task_id: int, data: TaskUpdateInput, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды", "участник")
@@ -167,7 +167,7 @@ def update_task(task_id: int, data: TaskUpdateInput, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-@router.post("/tasks/{task_id}/complete")
+@router.post("/tasks/{task_id}/complete", tags=["Tasks"], summary="Завершить выполнение задачи")
 def complete_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды", "участник")
@@ -185,7 +185,7 @@ def complete_task(task_id: int, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-@router.post("/tasks/{task_id}/unlock")
+@router.post("/tasks/{task_id}/unlock", tags=["Tasks"], summary="Принудительно освободить задачу (владелец команды)")
 def owner_unlock_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды")
@@ -194,7 +194,7 @@ def owner_unlock_task(task_id: int, db: Db, user: CurrentUser):
     db.refresh(task)
     return serialize_task(task)
 
-@router.post("/tasks/{task_id}/archive")
+@router.post("/tasks/{task_id}/archive", tags=["Tasks"], summary="Отправить задачу в архив")
 def archive_task(task_id: int, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды")
@@ -202,7 +202,7 @@ def archive_task(task_id: int, db: Db, user: CurrentUser):
     db.commit()
     return {"task_id": task_id, "is_archived": True}
 
-@router.get("/tasks/{task_id}/changes")
+@router.get("/tasks/{task_id}/changes", tags=["Tasks"], summary="История изменений (diff) задачи")
 def list_changes(task_id: int, db: Db, user: CurrentUser):
     task, _ = task_access(db, task_id, user.user_id)
     changes = db.scalars(
@@ -225,7 +225,17 @@ def list_changes(task_id: int, db: Db, user: CurrentUser):
         for c in changes
     ]
 
-@router.get("/tasks/{task_id}/comments")
+@router.get("/tasks/{task_id}/export", tags=["Tasks"], summary="Экспортировать задачу в файл Markdown (.md)")
+def export_task(task_id: int, db: Db, user: CurrentUser):
+    task, _ = task_access(db, task_id, user.user_id)
+    filename = re.sub(r"[^a-zA-Z0-9_-]+", "-", task.title).strip("-") or f"task-{task_id}"
+    return Response(
+        content=f"# {task.title}\n\n{task.content or ''}",
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{filename}.md"'},
+    )
+
+@router.get("/tasks/{task_id}/comments", tags=["Comments & Remarks"], summary="Список комментариев к задаче")
 def list_comments(task_id: int, db: Db, user: CurrentUser):
     task_access(db, task_id, user.user_id)
     comments = db.scalars(
@@ -246,7 +256,7 @@ def list_comments(task_id: int, db: Db, user: CurrentUser):
         for c in comments
     ]
 
-@router.post("/tasks/{task_id}/comments", status_code=status.HTTP_201_CREATED)
+@router.post("/tasks/{task_id}/comments", tags=["Comments & Remarks"], status_code=status.HTTP_201_CREATED, summary="Добавить комментарий к задаче")
 def add_comment(task_id: int, data: CommentInput, db: Db, user: CurrentUser):
     _, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды", "участник")
@@ -261,7 +271,7 @@ def add_comment(task_id: int, data: CommentInput, db: Db, user: CurrentUser):
     db.refresh(comment)
     return {"comment_id": comment.comment_id, "task_id": task_id, "text": comment.text}
 
-@router.get("/tasks/{task_id}/remarks")
+@router.get("/tasks/{task_id}/remarks", tags=["Comments & Remarks"], summary="Список замечаний к задаче")
 def list_remarks(task_id: int, db: Db, user: CurrentUser):
     task_access(db, task_id, user.user_id)
     remarks = db.scalars(
@@ -285,7 +295,7 @@ def list_remarks(task_id: int, db: Db, user: CurrentUser):
         for r in remarks
     ]
 
-@router.post("/tasks/{task_id}/remarks", status_code=status.HTTP_201_CREATED)
+@router.post("/tasks/{task_id}/remarks", tags=["Comments & Remarks"], status_code=status.HTTP_201_CREATED, summary="Оставить замечание и вернуть задачу на доработку")
 def add_remark(task_id: int, data: RemarkInput, db: Db, user: CurrentUser):
     task, member = task_access(db, task_id, user.user_id)
     require_role(member, "владелец команды", "участник")
@@ -325,7 +335,7 @@ def add_remark(task_id: int, data: RemarkInput, db: Db, user: CurrentUser):
     db.refresh(remark)
     return {"remark_id": remark.remark_id, "task_id": task_id, "status": "открыто"}
 
-@router.patch("/remarks/{remark_id}")
+@router.patch("/remarks/{remark_id}", tags=["Comments & Remarks"], summary="Отметить замечание устранённым")
 def resolve_remark(remark_id: int, db: Db, user: CurrentUser):
     remark = db.get(Remark, remark_id)
     if not remark:
@@ -341,14 +351,3 @@ def resolve_remark(remark_id: int, db: Db, user: CurrentUser):
     remark.remark_status_id = resolved_status.remark_status_id
     db.commit()
     return {"remark_id": remark_id, "status": "устранено"}
-
-
-@router.get("/tasks/{task_id}/export")
-def export_task(task_id: int, db: Db, user: CurrentUser):
-    task, _ = task_access(db, task_id, user.user_id)
-    filename = re.sub(r"[^a-zA-Z0-9_-]+", "-", task.title).strip("-") or f"task-{task_id}"
-    return Response(
-        content=f"# {task.title}\n\n{task.content or ''}",
-        media_type="text/markdown",
-        headers={"Content-Disposition": f'attachment; filename="{filename}.md"'},
-    )
