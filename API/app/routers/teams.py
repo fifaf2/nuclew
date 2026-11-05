@@ -22,9 +22,9 @@ from app.models import (
 )
 from app.schemas import InvitationInput, JoinInput, RoleInput, TeamInput
 
-router = APIRouter(prefix="/api/v1", tags=["teams"])
+router = APIRouter(prefix="/api/v1")
 
-@router.get("/teams")
+@router.get("/teams", tags=["Teams"], summary="Список команд пользователя")
 def list_teams(db: Db, user: CurrentUser):
     memberships = db.scalars(
         select(TeamMember)
@@ -43,7 +43,7 @@ def list_teams(db: Db, user: CurrentUser):
         for tm in memberships
     ]
 
-@router.post("/teams", status_code=status.HTTP_201_CREATED)
+@router.post("/teams", tags=["Teams"], status_code=status.HTTP_201_CREATED, summary="Создать новую команду")
 def create_team(data: TeamInput, db: Db, user: CurrentUser):
     owner_role = get_lookup_by_name(db, TeamRole, "владелец команды")
 
@@ -66,7 +66,7 @@ def create_team(data: TeamInput, db: Db, user: CurrentUser):
 
     return {"team_id": team.team_id, "name": team.name, "description": team.description}
 
-@router.get("/teams/{team_id}")
+@router.get("/teams/{team_id}", tags=["Teams"], summary="Информация о команде")
 def get_team(team_id: int, db: Db, user: CurrentUser):
     membership(db, team_id, user.user_id)
     team = db.get(Team, team_id)
@@ -80,7 +80,7 @@ def get_team(team_id: int, db: Db, user: CurrentUser):
         "created_time": team.created_time,
     }
 
-@router.patch("/teams/{team_id}")
+@router.patch("/teams/{team_id}", tags=["Teams"], summary="Изменить название или описание команды")
 def update_team(team_id: int, data: TeamInput, db: Db, user: CurrentUser):
     member = membership(db, team_id, user.user_id)
     require_role(member, "владелец команды")
@@ -95,7 +95,7 @@ def update_team(team_id: int, data: TeamInput, db: Db, user: CurrentUser):
     db.refresh(team)
     return get_team(team_id, db, user)
 
-@router.get("/teams/{team_id}/members")
+@router.get("/teams/{team_id}/members", tags=["Teams"], summary="Список участников команды")
 def list_members(team_id: int, db: Db, user: CurrentUser):
     membership(db, team_id, user.user_id)
     members = db.scalars(
@@ -117,7 +117,35 @@ def list_members(team_id: int, db: Db, user: CurrentUser):
         for tm in members
     ]
 
-@router.post("/teams/{team_id}/invitations", status_code=status.HTTP_201_CREATED)
+@router.patch("/teams/{team_id}/members/{member_user_id}", tags=["Teams"], summary="Изменить роль участника команды")
+def update_member_role(team_id: int, member_user_id: int, data: RoleInput, db: Db, user: CurrentUser):
+    owner = membership(db, team_id, user.user_id)
+    require_role(owner, "владелец команды")
+
+    target = membership(db, team_id, member_user_id)
+    if target.role.name == "владелец команды":
+        raise HTTPException(status_code=400, detail="Нельзя изменить роль владельца")
+
+    new_role = get_lookup_by_name(db, TeamRole, data.role)
+    target.team_role_id = new_role.team_role_id
+    db.commit()
+
+    return {"team_id": team_id, "user_id": member_user_id, "role": data.role}
+
+@router.delete("/teams/{team_id}/members/{member_user_id}", tags=["Teams"], status_code=status.HTTP_204_NO_CONTENT, summary="Исключить участника из команды")
+def remove_member(team_id: int, member_user_id: int, db: Db, user: CurrentUser):
+    owner = membership(db, team_id, user.user_id)
+    require_role(owner, "владелец команды")
+
+    target = membership(db, team_id, member_user_id)
+    if target.role.name == "владелец команды":
+        raise HTTPException(status_code=400, detail="Нельзя исключить владельца команды")
+
+    db.delete(target)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/teams/{team_id}/invitations", tags=["Invitations"], status_code=status.HTTP_201_CREATED, summary="Создать код приглашения в команду")
 def create_invitation(team_id: int, data: InvitationInput, db: Db, user: CurrentUser):
     member = membership(db, team_id, user.user_id)
     require_role(member, "владелец команды")
@@ -143,7 +171,7 @@ def create_invitation(team_id: int, data: InvitationInput, db: Db, user: Current
         "expires_time": invitation.expires_time,
     }
 
-@router.delete("/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/invitations/{invitation_id}", tags=["Invitations"], status_code=status.HTTP_204_NO_CONTENT, summary="Отозвать приглашение")
 def revoke_invitation(invitation_id: int, db: Db, user: CurrentUser):
     invitation = db.get(Invitation, invitation_id)
     if not invitation:
@@ -157,7 +185,7 @@ def revoke_invitation(invitation_id: int, db: Db, user: CurrentUser):
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.post("/invitations/join")
+@router.post("/invitations/join", tags=["Invitations"], summary="Вступить в команду по коду приглашения")
 def join_team(data: JoinInput, db: Db, user: CurrentUser):
     active_status = get_lookup_by_name(db, InvitationStatus, "активен")
     now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -196,35 +224,7 @@ def join_team(data: JoinInput, db: Db, user: CurrentUser):
 
     return {"team_id": invitation.team_id, "role": "участник"}
 
-@router.patch("/teams/{team_id}/members/{member_user_id}")
-def update_member_role(team_id: int, member_user_id: int, data: RoleInput, db: Db, user: CurrentUser):
-    owner = membership(db, team_id, user.user_id)
-    require_role(owner, "владелец команды")
-
-    target = membership(db, team_id, member_user_id)
-    if target.role.name == "владелец команды":
-        raise HTTPException(status_code=400, detail="Нельзя изменить роль владельца")
-
-    new_role = get_lookup_by_name(db, TeamRole, data.role)
-    target.team_role_id = new_role.team_role_id
-    db.commit()
-
-    return {"team_id": team_id, "user_id": member_user_id, "role": data.role}
-
-@router.delete("/teams/{team_id}/members/{member_user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_member(team_id: int, member_user_id: int, db: Db, user: CurrentUser):
-    owner = membership(db, team_id, user.user_id)
-    require_role(owner, "владелец команды")
-
-    target = membership(db, team_id, member_user_id)
-    if target.role.name == "владелец команды":
-        raise HTTPException(status_code=400, detail="Нельзя исключить владельца команды")
-
-    db.delete(target)
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-@router.get("/teams/{team_id}/reports/task-statuses")
+@router.get("/teams/{team_id}/reports/task-statuses", tags=["Reports"], summary="Отчёт по количеству задач в каждом статусе")
 def task_status_report(team_id: int, db: Db, user: CurrentUser):
     membership(db, team_id, user.user_id)
     rows = db.execute(
@@ -246,7 +246,7 @@ def task_status_report(team_id: int, db: Db, user: CurrentUser):
 
     return [dict(r) for r in rows]
 
-@router.get("/teams/{team_id}/reports/activity")
+@router.get("/teams/{team_id}/reports/activity", tags=["Reports"], summary="Отчёт по активности участников команды")
 def activity_report(team_id: int, db: Db, user: CurrentUser):
     member = membership(db, team_id, user.user_id)
     require_role(member, "владелец команды")

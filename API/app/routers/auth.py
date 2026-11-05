@@ -12,9 +12,9 @@ from app.models import PresenceStatus, User, UserActivityStatus
 from app.schemas import LoginInput, RegisterInput
 from app.security import create_access_token, password_hash, password_matches
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED, summary="Регистрация нового пользователя")
 def register(data: RegisterInput, db: Db):
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", data.email):
         raise HTTPException(status_code=422, detail="Некорректный адрес электронной почты")
@@ -39,7 +39,7 @@ def register(data: RegisterInput, db: Db):
 
     return {"access_token": create_access_token(user.user_id), "token_type": "bearer"}
 
-@router.post("/login")
+@router.post("/login", summary="Авторизация и получение JWT-токена")
 def login(data: LoginInput, db: Db):
     user = db.scalar(
         select(User).where(

@@ -11,9 +11,9 @@ from app.models import SystemLog, Task, TaskChange, Team, User, UserActivityStat
 from app.schemas import ActivityInput
 from app.security import password_hash
 
-router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
 
-@router.get("/users")
+@router.get("/users", summary="Поиск и список всех пользователей")
 def admin_users(db: Db, user: CurrentUser, q: str | None = None, limit: int = Query(default=50, ge=1, le=100)):
     support_only(user)
     stmt = select(User)
@@ -36,7 +36,7 @@ def admin_users(db: Db, user: CurrentUser, q: str | None = None, limit: int = Qu
         for u in users
     ]
 
-@router.patch("/users/{target_user_id}/activity")
+@router.patch("/users/{target_user_id}/activity", summary="Заблокировать или разблокировать пользователя")
 def set_user_activity(target_user_id: int, data: ActivityInput, db: Db, user: CurrentUser):
     support_only(user)
     target = db.get(User, target_user_id)
@@ -50,7 +50,7 @@ def set_user_activity(target_user_id: int, data: ActivityInput, db: Db, user: Cu
 
     return {"user_id": target_user_id, "activity_status": activity_name}
 
-@router.post("/users/{target_user_id}/password-reset")
+@router.post("/users/{target_user_id}/password-reset", summary="Сбросить пароль пользователя (выдать временный)")
 def reset_user_password(target_user_id: int, db: Db, user: CurrentUser):
     support_only(user)
     target = db.get(User, target_user_id)
@@ -63,7 +63,7 @@ def reset_user_password(target_user_id: int, db: Db, user: CurrentUser):
 
     return {"user_id": target_user_id, "temporary_password": temporary_password}
 
-@router.get("/teams")
+@router.get("/teams", summary="Список всех команд в системе")
 def admin_teams(db: Db, user: CurrentUser, limit: int = Query(default=50, ge=1, le=100)):
     support_only(user)
     teams = db.scalars(
@@ -82,7 +82,7 @@ def admin_teams(db: Db, user: CurrentUser, limit: int = Query(default=50, ge=1, 
         for t in teams
     ]
 
-@router.get("/tasks/{task_id}/changes")
+@router.get("/tasks/{task_id}/changes", summary="Просмотр истории изменений любой задачи")
 def admin_task_changes(task_id: int, db: Db, user: CurrentUser):
     support_only(user)
     task = db.get(Task, task_id)
@@ -110,7 +110,7 @@ def admin_task_changes(task_id: int, db: Db, user: CurrentUser):
         for c in changes
     ]
 
-@router.post("/tasks/{task_id}/unlock")
+@router.post("/tasks/{task_id}/unlock", summary="Принудительно разблокировать задачу (техподдержка)")
 def support_unlock_task(task_id: int, db: Db, user: CurrentUser):
     support_only(user)
     task = db.get(Task, task_id)
@@ -121,7 +121,7 @@ def support_unlock_task(task_id: int, db: Db, user: CurrentUser):
     db.commit()
     return {"task_id": task_id, "status": "свободна"}
 
-@router.get("/system-logs")
+@router.get("/system-logs", summary="Просмотр системных логов")
 def system_logs(db: Db, user: CurrentUser, limit: int = Query(default=100, ge=1, le=500)):
     support_only(user)
     logs = db.scalars(

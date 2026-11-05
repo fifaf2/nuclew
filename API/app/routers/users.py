@@ -10,7 +10,7 @@ from app.models import Notification, NotificationReadStatus, PresenceStatus, Use
 from app.schemas import NotificationInput, PresenceInput, ProfileInput
 from app.security import password_hash
 
-router = APIRouter(prefix="/api/v1", tags=["users"])
+router = APIRouter(prefix="/api/v1")
 
 def serialize_user(user: User) -> dict:
     return {
@@ -24,11 +24,11 @@ def serialize_user(user: User) -> dict:
         "activity_status": user.activity_status.name,
     }
 
-@router.get("/users/me")
+@router.get("/users/me", tags=["Users"], summary="Получить профиль текущего пользователя")
 def get_profile(user: CurrentUser):
     return serialize_user(user)
 
-@router.patch("/users/me")
+@router.patch("/users/me", tags=["Users"], summary="Обновить профиль (никнейм, аватар, пароль)")
 def update_profile(data: ProfileInput, db: Db, user: CurrentUser):
     updates = data.model_dump(exclude_unset=True)
     if not updates:
@@ -50,7 +50,7 @@ def update_profile(data: ProfileInput, db: Db, user: CurrentUser):
 
     return serialize_user(user)
 
-@router.patch("/users/me/presence")
+@router.patch("/users/me/presence", tags=["Users"], summary="Изменить статус присутствия")
 def update_presence(data: PresenceInput, db: Db, user: CurrentUser):
     presence = get_lookup_by_name(db, PresenceStatus, data.status)
     user.presence_status_id = presence.presence_status_id
@@ -58,7 +58,7 @@ def update_presence(data: PresenceInput, db: Db, user: CurrentUser):
     db.refresh(user)
     return serialize_user(user)
 
-@router.get("/users/me/notifications")
+@router.get("/users/me/notifications", tags=["Notifications"], summary="Список уведомлений пользователя")
 def list_notifications(
     db: Db,
     user: CurrentUser,
@@ -86,7 +86,7 @@ def list_notifications(
         for n in notifications
     ]
 
-@router.patch("/notifications/{notification_id}")
+@router.patch("/notifications/{notification_id}", tags=["Notifications"], summary="Отметить уведомление прочитанным/непрочитанным")
 def mark_notification(notification_id: int, data: NotificationInput, db: Db, user: CurrentUser):
     notification = db.scalar(
         select(Notification).filter_by(
